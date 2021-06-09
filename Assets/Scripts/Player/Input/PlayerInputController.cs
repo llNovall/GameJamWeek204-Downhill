@@ -10,6 +10,8 @@ public class PlayerInputController : MonoBehaviour
     private PlayerInput _playerInput;
 
     private event UnityAction<float> OnPlayerSideWaysMovementInputUpdated;
+    private event UnityAction<float> OnPlayerBackwardsMovementInputUpdated;
+
 
     private void Start()
     {
@@ -25,16 +27,20 @@ public class PlayerInputController : MonoBehaviour
     private void FixedUpdate()
     {
         float input = _playerInput.actions["SideWays"].ReadValue<float>();
-        //Debug.LogError(inputVector);
         if (input != 0)
             OnPlayerSideWaysMovementInputUpdated?.Invoke(input);
 
+        input = _playerInput.actions["VerticalMovement"].ReadValue<float>();
+        if (input != 0)
+            OnPlayerBackwardsMovementInputUpdated?.Invoke(input);
     }
 
     #region
 
     public void SubscribeToOnPlayerSideWaysMovementInputUpdated(UnityAction<float> callback) => HelperUtility.SubscribeTo(ref OnPlayerSideWaysMovementInputUpdated, ref callback);
     public void UnsubscribeFromOnPlayerSideWaysMovementInputUpdated(UnityAction<float> callback) => HelperUtility.UnsubscribeFrom(ref OnPlayerSideWaysMovementInputUpdated, ref callback);
+    public void SubscribeToOnPlayerBackwardsMovementInputUpdated(UnityAction<float> callback) => HelperUtility.SubscribeTo(ref OnPlayerBackwardsMovementInputUpdated, ref callback);
+    public void UnsubscribeFromOnPlayerBackwardsMovementInputUpdated(UnityAction<float> callback) => HelperUtility.UnsubscribeFrom(ref OnPlayerBackwardsMovementInputUpdated, ref callback);
 
     #endregion
 }
