@@ -17,11 +17,11 @@ public class UITimeManager : MonoBehaviour
 
     private void TimeManager_OnTimeFinished()
     {
-        _txtTimeRemaining.text = "0";
+        _txtTimeRemaining.text = "0 s";
     }
 
     private void TimeManager_OnProgressUpdated(float progress)
     {
-        _txtTimeRemaining.text = Mathf.RoundToInt(progress).ToString();
+        _txtTimeRemaining.text = $"{Mathf.RoundToInt(progress)} s";
     }
 }
