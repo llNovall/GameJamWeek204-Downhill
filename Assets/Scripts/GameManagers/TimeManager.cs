@@ -1,3 +1,5 @@
+using FMOD.Studio;
+using FMODUnity;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -18,6 +20,8 @@ public class TimeManager : MonoBehaviour
 
     [SerializeField]
     private Transform _player;
+
+    private EventInstance _eventInstance;
 
     private event UnityAction<float> OnProgressUpdated;
     private event UnityAction OnTimeFinished;
@@ -51,6 +55,7 @@ public class TimeManager : MonoBehaviour
             if (_currentTime == 0)
             {
                 _isTimeFinished = true;
+                PlaySound("event:/SFX/Cheer");
                 OnTimeFinished?.Invoke();
             }
         }
@@ -64,6 +69,28 @@ public class TimeManager : MonoBehaviour
     }
     public float GetMaxProgress() => _timeRequired;
 
+    protected void PlaySound(string eventID)
+    {
+        if (_eventInstance.isValid())
+        {
+            _eventInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+            _eventInstance.release();
+        }
+
+        _eventInstance = RuntimeManager.CreateInstance(eventID);
+        _eventInstance.start();
+        _eventInstance.setVolume(VolumeManager.Current.SFX);
+
+    }
+
+    private void OnDestroy()
+    {
+        if (_eventInstance.isValid())
+        {
+            _eventInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+            _eventInstance.release();
+        }
+    }
     #region Event Subscription
     public void SubscribeToOnProgressUpdated(UnityAction<float> callback) => HelperUtility.SubscribeTo(ref OnProgressUpdated, ref callback);
     public void UnsubscribeFromOnProgressUpdated(UnityAction<float> callback) => HelperUtility.UnsubscribeFrom(ref OnProgressUpdated, ref callback);

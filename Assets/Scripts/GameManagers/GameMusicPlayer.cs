@@ -79,5 +79,26 @@ public class GameMusicPlayer : MonoBehaviour
         _eventInstance.setVolume(_volume);
     }
 
+    public void PlayMainMenuMusic()
+    {
+        if (_eventInstance.isValid())
+        {
+            _eventInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+            _eventInstance.release();
+        }
+
+        _eventInstance = RuntimeManager.CreateInstance(_mainmenuMusicID);
+        _eventInstance.start();
+
+        _eventInstance.setVolume(_volume);
+    }
+    public void StopMusic()
+    {
+        if (_eventInstance.isValid())
+        {
+            _eventInstance.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
+            _eventInstance.release();
+        }
+    }
     private void VolumeManager_OnChangeMusicVolume(float volume) => SetVolume(volume);
 }

@@ -47,6 +47,12 @@ public class PlayerMovementBasedOnEnergy : MonoBehaviour
     [SerializeField]
     private bool _isEnabled;
 
+    [SerializeField]
+    private float _timePassedSinceHit, _timeRequiredToMoveAfteHit;
+
+    [SerializeField]
+    private PlayerMovementState _movementState;
+
     private event UnityAction<float> OnSpeedChanged;
     private event UnityAction<float> OnSpeedLerpChanged;
     private void Start()
@@ -74,63 +80,83 @@ public class PlayerMovementBasedOnEnergy : MonoBehaviour
     {
         if (_isEnabled)
         {
-            Vector2 move = gameObject.transform.rotation * Vector2.down * _currentSpeed * Time.fixedDeltaTime;
-
-            if (!Physics2D.Raycast(gameObject.transform.position, move.normalized, _currentDistanceFromWall, _layerMask))
+            switch (_movementState)
             {
-                gameObject.transform.position += (Vector3)move;
-                if(_energyState != PlayerEnergyState.Eaten)
-                {
-                    _currentSpeed = Mathf.Min(_currentSpeed + _accelerationSpeed * Time.fixedDeltaTime, _maxSpeedFromEnergy);
+                case PlayerMovementState.Normal:
+                    Vector2 move = gameObject.transform.rotation * Vector2.down * _currentSpeed * Time.fixedDeltaTime;
 
-
-                    float lerpValue = _currentSpeed.MapValue(_speedData.ReverseSpeed, _speedData.MaxSpeed, 0.1f, 1);
-                    _playerEnergy.RemoveEnergy(Mathf.Lerp(_minEnergyUsage, _maxEnergyUsage, lerpValue) * Time.fixedDeltaTime);
-                }
-                else
-                {
-                    if(_currentSpeed > _eatSpeed)
+                    if (!Physics2D.Raycast(gameObject.transform.position, move.normalized, _currentDistanceFromWall, _layerMask))
                     {
-                        _currentSpeed = Mathf.Max(_currentSpeed - _eatSpeedAcceleration * Time.fixedDeltaTime, _eatSpeed);
+                        gameObject.transform.position += (Vector3)move;
+                        if (_energyState != PlayerEnergyState.Eaten)
+                        {
+                            _currentSpeed = Mathf.Min(_currentSpeed + _accelerationSpeed * Time.fixedDeltaTime, _maxSpeedFromEnergy);
+
+
+                            float lerpValue = _currentSpeed.MapValue(_speedData.ReverseSpeed, _speedData.MaxSpeed, 0.1f, 1);
+                            _playerEnergy.RemoveEnergy(Mathf.Lerp(_minEnergyUsage, _maxEnergyUsage, lerpValue) * Time.fixedDeltaTime);
+                        }
+                        else
+                        {
+                            if (_currentSpeed > _eatSpeed)
+                            {
+                                _currentSpeed = Mathf.Max(_currentSpeed - _eatSpeedAcceleration * Time.fixedDeltaTime, _eatSpeed);
+                            }
+                        }
+
+
+                        OnSpeedChanged?.Invoke(_currentSpeed);
+                        float speedLerp = _currentSpeed >= 0 ? _currentSpeed / _speedData.MaxSpeed : Mathf.Abs(_currentSpeed) / Mathf.Abs(_speedData.ReverseSpeed);
+                        OnSpeedLerpChanged?.Invoke(speedLerp);
+
                     }
-                }
-                    
-
-                OnSpeedChanged?.Invoke(_currentSpeed);
-
-            }
-            else
-            {
-                RaycastHit2D hit = Physics2D.Raycast(gameObject.transform.position, move.normalized, _currentDistanceFromWall, _layerMask);
-
-                move = Vector2.down * _currentSpeed;
-
-                if (hit)
-                {
-                    move += (Vector2)gameObject.transform.position - hit.point;
-                }
-                gameObject.transform.position += (Vector3)move * Time.fixedDeltaTime;
-
-                if(_energyState != PlayerEnergyState.Eaten)
-                {
-                    _currentSpeed = Mathf.Min(_currentSpeed + _accelerationSpeed * Time.fixedDeltaTime, _maxSpeedFromEnergy);
-
-                    float lerpValue = _currentSpeed.MapValue(_speedData.ReverseSpeed, _speedData.MaxSpeed, 0.1f, 1);
-                    _playerEnergy.RemoveEnergy(Mathf.Lerp(_minEnergyUsage, _maxEnergyUsage, lerpValue) * Time.fixedDeltaTime);
-                }
-                else
-                {
-                    if (_currentSpeed > _eatSpeed)
+                    else
                     {
-                        _currentSpeed = Mathf.Max(_currentSpeed - _eatSpeedAcceleration * Time.fixedDeltaTime, _eatSpeed);
-                    }
-                }
-                
+                        RaycastHit2D hit = Physics2D.Raycast(gameObject.transform.position, move.normalized, _currentDistanceFromWall, _layerMask);
 
-                OnSpeedChanged?.Invoke(_currentSpeed);
-                float speedLerp = _currentSpeed >= 0 ? _currentSpeed / _speedData.MaxSpeed : Mathf.Abs(_currentSpeed) / Mathf.Abs(_speedData.ReverseSpeed);
-                OnSpeedLerpChanged?.Invoke(speedLerp);
+                        move = Vector2.down * _currentSpeed;
+
+                        if (hit)
+                        {
+                            move += (Vector2)gameObject.transform.position - hit.point;
+                        }
+                        gameObject.transform.position += (Vector3)move * Time.fixedDeltaTime;
+
+                        if (_energyState != PlayerEnergyState.Eaten)
+                        {
+                            _currentSpeed = Mathf.Min(_currentSpeed + _accelerationSpeed * Time.fixedDeltaTime, _maxSpeedFromEnergy);
+
+                            float lerpValue = _currentSpeed.MapValue(_speedData.ReverseSpeed, _speedData.MaxSpeed, 0.1f, 1);
+                            _playerEnergy.RemoveEnergy(Mathf.Lerp(_minEnergyUsage, _maxEnergyUsage, lerpValue) * Time.fixedDeltaTime);
+                        }
+                        else
+                        {
+                            if (_currentSpeed > _eatSpeed)
+                            {
+                                _currentSpeed = Mathf.Max(_currentSpeed - _eatSpeedAcceleration * Time.fixedDeltaTime, _eatSpeed);
+                            }
+                        }
+
+
+                        OnSpeedChanged?.Invoke(_currentSpeed);
+                        float speedLerp = _currentSpeed >= 0 ? _currentSpeed / _speedData.MaxSpeed : Mathf.Abs(_currentSpeed) / Mathf.Abs(_speedData.ReverseSpeed);
+                        OnSpeedLerpChanged?.Invoke(speedLerp);
+                    }
+                    break;
+                case PlayerMovementState.ObstacleHit:
+                    if (_timePassedSinceHit >= _timeRequiredToMoveAfteHit)
+                    {
+                        PlayerIdentifier.PlayerAnimation.IsHitObstacle(false);
+                        _timePassedSinceHit = 0;
+                        _movementState = PlayerMovementState.Normal;
+                    }
+                    else
+                        _timePassedSinceHit += Time.deltaTime;
+                    break;
+                default:
+                    break;
             }
+            
         }
     }
 
@@ -153,41 +179,47 @@ public class PlayerMovementBasedOnEnergy : MonoBehaviour
     }
     private void PlayerInputController_OnPlayerBackwardsMovementInputUpdated(float input)
     {
-        if(input < 0)
+        if(_movementState == PlayerMovementState.Normal)
         {
-            _currentSpeed = Mathf.Clamp(_currentSpeed + Time.fixedDeltaTime * input * _reverseAccelerationSpeed, _speedData.ReverseSpeed, _speedData.MaxSpeed);
+            if (input < 0)
+            {
+                //_currentSpeed = Mathf.Clamp(_currentSpeed + Time.fixedDeltaTime * input * _reverseAccelerationSpeed, _speedData.ReverseSpeed, _speedData.MaxSpeed);
 
-            _playerEnergy.RemoveEnergy(Mathf.Lerp(_minEnergyUsage, _maxEnergyUsage, _energyLerp) * Time.fixedDeltaTime);
-        }
-        else
-        {
-            _currentSpeed = Mathf.Min(_currentSpeed + _accelerationSpeed * Time.fixedDeltaTime, _maxSpeedFromEnergy);
+                //_playerEnergy.RemoveEnergy(Mathf.Lerp(_minEnergyUsage, _maxEnergyUsage, _energyLerp) * Time.fixedDeltaTime);
+            }
+            else
+            {
+                _currentSpeed = Mathf.Min(_currentSpeed + _accelerationSpeed * Time.fixedDeltaTime, _maxSpeedFromEnergy);
 
-            _playerEnergy.RemoveEnergy(Mathf.Lerp(_maxEnergyUsage, _minEnergyUsage, _energyLerp) * Time.fixedDeltaTime);
+                _playerEnergy.RemoveEnergy(Mathf.Lerp(_maxEnergyUsage, _minEnergyUsage, _energyLerp) * Time.fixedDeltaTime);
+            }
         }
     }
 
     private void PlayerInputController_OnPlayerSideWaysMovementInputUpdated(float input)
     {
-        Vector2 direction = input * Vector2.right * _currentSlideSpeed * Time.fixedDeltaTime;
-
-        if (input < 0)
+        if(_movementState == PlayerMovementState.Normal)
         {
-            if (gameObject.transform.rotation.eulerAngles.z < 360 - _maxRotation && gameObject.transform.rotation.eulerAngles.z > 180)
+            Vector2 direction = input * Vector2.right * _currentSlideSpeed * Time.fixedDeltaTime;
+
+            if (input < 0)
+            {
+                if (gameObject.transform.rotation.eulerAngles.z < 360 - _maxRotation && gameObject.transform.rotation.eulerAngles.z > 180)
+                    return;
+            }
+            else if (input > 0)
+            {
+                if (gameObject.transform.rotation.eulerAngles.z > _maxRotation && gameObject.transform.rotation.eulerAngles.z <= 180)
+                    return;
+            }
+
+            if (Physics2D.Raycast(gameObject.transform.position, direction.normalized, _minDistanceFromWall, _layerMask))
                 return;
+
+            Vector3 eulerRotation = gameObject.transform.rotation.eulerAngles + new Vector3(0, 0, direction.x);
+
+            gameObject.transform.rotation = Quaternion.Euler(eulerRotation);
         }
-        else if(input > 0)
-        {
-            if (gameObject.transform.rotation.eulerAngles.z > _maxRotation && gameObject.transform.rotation.eulerAngles.z <= 180)
-                return;
-        }
-
-        if (Physics2D.Raycast(gameObject.transform.position, direction.normalized, _minDistanceFromWall, _layerMask))
-            return;
-
-        Vector3 eulerRotation = gameObject.transform.rotation.eulerAngles + new Vector3(0,0, direction.x);
-
-        gameObject.transform.rotation = Quaternion.Euler(eulerRotation);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -196,6 +228,9 @@ public class PlayerMovementBasedOnEnergy : MonoBehaviour
         {
             _currentSpeed = 0;
             OnSpeedChanged?.Invoke(_currentSpeed);
+            PlayerIdentifier.PlayerAnimation.IsHitObstacle(true);
+            _movementState = PlayerMovementState.ObstacleHit;
+            PlayerIdentifier.PlayerSound.PlaySound("event:/SFX/HitStone");
         }
     }
 

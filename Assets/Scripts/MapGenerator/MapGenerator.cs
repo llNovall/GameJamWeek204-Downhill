@@ -80,6 +80,7 @@ public class MapGenerator : MonoBehaviour
                 _currentMapIndex = index + 1;
 
             _objMaps[_currentMapIndex].transform.position = Vector3.down * _currentMapIncrement * _offset;
+
             _currentMapIncrement++;
         }
 

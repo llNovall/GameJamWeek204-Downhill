@@ -1,18 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class UIOptions : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    [SerializeField]
+    private Slider _sldMusicVolume;
 
-    // Update is called once per frame
-    void Update()
+    private void Start()
     {
-        
+        _sldMusicVolume.onValueChanged.AddListener(new UnityAction<float>(c => VolumeManager.Current.SetMusic(c)));
     }
 }

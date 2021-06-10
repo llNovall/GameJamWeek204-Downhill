@@ -8,6 +8,9 @@ public class PlayerAnimation : MonoBehaviour
     [SerializeField]
     private Animator _animator;
 
+    [SerializeField]
+    private float _animationSpeedOffset;
+
     private void Start()
     {
         if (!_animator)
@@ -22,11 +25,16 @@ public class PlayerAnimation : MonoBehaviour
 
     private void PlayerMovementBasedOnEnergy_OnSpeedLerpChanged(float speedLerp)
     {
-        _animator.speed = speedLerp;
+        _animator.speed = Mathf.Min(1, speedLerp + _animationSpeedOffset);
     }
 
     private void SpeedIncreaserBasedOnSize_OnLerpValueOfSizeChanged(float sizeLerp)
     {
         _animator.SetFloat("size", sizeLerp);
+    }
+
+    public void IsHitObstacle(bool isHit)
+    {
+        _animator.SetBool("isHit", isHit);
     }
 }

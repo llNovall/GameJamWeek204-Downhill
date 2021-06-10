@@ -21,7 +21,7 @@ public class SoundPlayer : MonoBehaviour
         else
             Debug.LogError($"Failed to find VolumeManager");
     }
-    protected void PlaySound(string eventID)
+    public void PlaySound(string eventID)
     {
         if (_eventInstance.isValid())
         {
@@ -65,10 +65,13 @@ public class SoundPlayer : MonoBehaviour
     {
         if (VolumeManager.Current)
         {
+
             VolumeManager.Current.UnsubscribeFromChangeSFX(VolumeManager_OnChangeSFX);
         }
         else
             Debug.LogError($"Failed to find VolumeManager");
+
+        StopSound();
     }
 
     private void VolumeManager_OnChangeSFX(float volume) => UpdateVolume(volume);

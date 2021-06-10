@@ -5,8 +5,8 @@ using UnityEngine.Events;
 
 public class EnergyProvider : MonoBehaviour
 {
-    [SerializeField]
-    private bool _isHit;
+    //[SerializeField]
+    //private bool _isHit;
 
     [SerializeField]
     private float _energyProvidedWhenHit;
@@ -15,19 +15,21 @@ public class EnergyProvider : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (!_isHit)
+        if (collision.tag == "Player")
         {
-            if(collision.tag == "Player")
-            {
-                PlayerIdentifier.PlayerEnergy.AddEnergy(_energyProvidedWhenHit);
-                _isHit = true;
-            }
+            PlayerIdentifier.PlayerEnergy.AddEnergy(_energyProvidedWhenHit);
+            gameObject.SetActive(false);
+            //_isHit = true;
         }
+        //if (!_isHit)
+        //{
+            
+        //}
     }
 
     private void OnBecameInvisible()
     {
-        _isHit = false;
+        //_isHit = false;
     }
 
     public void SubscribeToOnHit(UnityAction callback) => HelperUtility.SubscribeTo(ref OnHit, ref callback);
